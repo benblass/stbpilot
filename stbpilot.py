@@ -84,20 +84,20 @@ class SbApp(object):
 		return dict(position=self.droid.get_location())
 #--SbApp-----------------------------------------------------
 
-def worker():
-	"""Worker function"""
-	while True:
-		print 'Worker running'
-		sys.stdout.flush()
-		time.sleep(2)
-	return
+class Sensor(multiprocessing.Process):
+	def run(self):
+		while True:
+			print 'Worker running'
+			sys.stdout.flush()
+			time.sleep(1)
+		return
 
 
 #__main__
 
 Rex = StBernard()
 
-sensoring = multiprocessing.Process(target=worker)
+sensoring = Sensor()
 sensoring.daemon = True
 sensoring.start()
 
