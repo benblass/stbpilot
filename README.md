@@ -1,10 +1,10 @@
 #Saint-Bernard Pilot
 
 Python script based on dronekit api
-necessitates cherrypy, jinja2
-relie
+Necessitates cherrypy, jinja2
 
-run in a mavproxy console (connected to a working vehicle):
+
+Run in a mavproxy console (connected to a working vehicle):
 api start stbpilot.py
 
 As of V0.1:
