@@ -1,7 +1,11 @@
 import cherrypy
 import os, os.path
+import time
+import sys
 import simplejson
 from jinja2 import Environment, FileSystemLoader
+
+import multiprocessing
 
 host_ip = '0.0.0.0'
 host_port = 8080
@@ -80,9 +84,23 @@ class SbApp(object):
 		return dict(position=self.droid.get_location())
 #--SbApp-----------------------------------------------------
 
+def worker():
+	"""Worker function"""
+	while True:
+		print 'Worker running'
+		sys.stdout.flush()
+		time.sleep(2)
+	return
+
+
 #__main__
 
 Rex = StBernard()
+
+sensoring = multiprocessing.Process(target=worker)
+sensoring.daemon = True
+sensoring.start()
+
 
 cherrypy.tree.mount(SbApp(Rex), '/', config=cherrypy_conf)
 
