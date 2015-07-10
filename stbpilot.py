@@ -14,6 +14,10 @@ cherrypy_conf = {
 	'/': {
 		'tools.sessions.on': False,
 		'tools.staticdir.root': local_path
+	},
+	'/static' :{
+		'tools.staticdir.on': True,
+		'tools.staticdir.dir': './assets'
 	}
 }
 
@@ -38,7 +42,7 @@ class Templates:
 	def __init__(self, home_coords = None):
 		self.home_coords = home_coords
 		self.options = self.get_options()
-		self.environment = Environment(loader=FileSystemLoader( local_path+'/html'))
+		self.environment = Environment(loader=FileSystemLoader( local_path + '/html/'))
 
 	def get_options(self):
 			return {
@@ -87,7 +91,7 @@ class SbApp(object):
 class Sensor(multiprocessing.Process):
 	def run(self):
 		while True:
-			print 'Worker running'
+			#print 'Worker running'
 			sys.stdout.flush()
 			time.sleep(1)
 		return

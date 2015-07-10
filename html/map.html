@@ -4,7 +4,7 @@
 	<title>Map</title>
 </head>
 <body>
-{% include 'scripts.html' %}
+{% include 'html/scripts.html' %}
 	<div id="position" style="border:solid;">
 		<div id="lat">Latitude: {{options.vehicle_location[0]}}</div>
 		<div id="lon">Longitude: {{options.vehicle_location[1]}}</div>
@@ -23,8 +23,6 @@
 
 					$("#lat").text(data.position[0]);
 					$("#lon").text(data.position[1]);
-					$("#debug").text(JSON.stringify(data));
-
 				});
  		}
 
