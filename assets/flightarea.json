@@ -15,7 +15,14 @@
 									[45.768501,6.133579],
 									[45.768909,6.133249],
 									[45.769319,6.134946]],
-						"intial_search": []
+						"intial_search": [],
+						"display_options" : {
+							"tilespath" : "leschaux",
+							"center_coords" : [45.768616, 6.134881],
+							"zoom_level" : 16,
+							"maxZoom" : 19,
+							"minZoom": 15
+						}
 					},
 					 {
 					 	"flname": "Flight Zone 2",

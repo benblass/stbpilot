@@ -54,6 +54,8 @@ class Templates:
 					'vehicle_location': [],
 					'flight_area': {}
 			}
+	def _log(self, message):
+		print("[TMPDEBUG]: {0}".format(message))
 
 	def index(self):
 		self.options = self.get_options()
@@ -85,9 +87,9 @@ class SbApp(object):
 
 		self.droid = stbernard
 		self.flightarea = flightarea
-		print '[SBDEBUG] Instantiating template'
+		self._log('Instantiating template')
 		self.templates = Templates()
-		print '[SBDEBUG] Instantiated'
+		self._log('Instantiated')
 
 	def _log(self, message):
 		print "[APPDEBUG]: {0}".format(message)
@@ -118,18 +120,21 @@ class Sensor(multiprocessing.Process):
 			time.sleep(1)
 		return
 
+def _log(message):
+	print "[MAINDEBUG]: {0}".format(message)
+
 def loadFlightArea(filename = ''):
 	json_data = open(filename).read()
 	return simplejson.loads(json_data)
 
 #__main__
-print '[SBDEBUG] Spawning StBernard'
+_log('Spawning StBernard')
 rex = StBernard()
-print '[SBDEBUG] Spawned'
+_log('St Bernard Spawned')
 
-print '[SBDEBUG] Loading flight area'
+_log('Loading flight area')
 flightArea = loadFlightArea(configPath + configFile)
-print '[SBDEBUG] loaded : ' + str(flightArea)
+_log(' loaded : ' + str(flightArea))
 
 sensoring = Sensor()
 sensoring.daemon = True
