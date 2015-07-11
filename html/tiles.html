@@ -1,0 +1,9 @@
+<div id="map_container"></div>
+<script type="text/javascript">
+	var map = L.map('map_container').setView([45.769, 6.135],18);
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {attribution: 'bla', 
+		maxZoom: 19, 
+		id: 'bblassel.mjkbjnae',
+		accessToken: 'pk.eyJ1IjoiYmJsYXNzZWwiLCJhIjoiODFhNGY2NDY5MjdhMTY0NmU3ZmFlMTA1YjZjZDIyYjUifQ.Z6R8m6whUnAZfjDiTBsFdw'
+	}).addTo(map);
+</script>

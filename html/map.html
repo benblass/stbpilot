@@ -5,6 +5,9 @@
 </head>
 <body>
 {% include 'html/scripts.html' %}
+	<div id="tiles">
+		{% include 'html/tiles.html' %}
+	</div>
 	<div id="position" style="border:solid;">
 		<div id="lat">Latitude: {{options.vehicle_location[0]}}</div>
 		<div id="lon">Longitude: {{options.vehicle_location[1]}}</div>

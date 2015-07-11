@@ -69,10 +69,8 @@ class SbApp(object):
 
 	"""
 	def __init__(self,stbernard=None):
-		print '[SBDEBUG] Spawning StBernard'
+
 		self.droid = stbernard
-		print '[SBDEBUG] Spawned'
-		
 		print '[SBDEBUG] Instantiating template'
 		self.templates = Templates()
 		print '[SBDEBUG] Instantiated'
@@ -92,14 +90,15 @@ class Sensor(multiprocessing.Process):
 	def run(self):
 		while True:
 			#print 'Worker running'
-			sys.stdout.flush()
+			#sys.stdout.flush()
 			time.sleep(1)
 		return
 
 
 #__main__
-
+print '[SBDEBUG] Spawning StBernard'
 Rex = StBernard()
+print '[SBDEBUG] Spawned'
 
 sensoring = Sensor()
 sensoring.daemon = True
