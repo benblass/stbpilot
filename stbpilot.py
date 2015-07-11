@@ -46,7 +46,8 @@ class Templates:
 
 	def get_options(self):
 			return {
-					'vehicle_location': []
+					'vehicle_location': [],
+					'flight_zone': ''
 			}
 
 	def index(self):
@@ -55,6 +56,7 @@ class Templates:
 
 	def map(self, params):
 		self.options['vehicle_location'] = params
+		self.options['flight_zone'] = 'leschaux'
 		return self.get_template('map')
 
 	def get_template(self, filename):

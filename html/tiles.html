@@ -1,9 +1,17 @@
 <div id="map_container"></div>
 <script type="text/javascript">
+
 	var map = L.map('map_container').setView([45.769, 6.135],18);
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {attribution: 'bla', 
-		maxZoom: 19, 
-		id: 'bblassel.mjkbjnae',
-		accessToken: 'pk.eyJ1IjoiYmJsYXNzZWwiLCJhIjoiODFhNGY2NDY5MjdhMTY0NmU3ZmFlMTA1YjZjZDIyYjUifQ.Z6R8m6whUnAZfjDiTBsFdw'
-	}).addTo(map);
+	var tilesPath = '/static/maptiles/' + {{options.flight_zone}} + '/{z}/{x}/{y}.png';
+
+	L.tileLayer(tilesPath , {maxZoom: 22, minZoom: 16}).addTo(map);
+	var flightzone = L.polygon([
+		[45.769319,6.134946],
+		[45.768784,6.135258],
+		[45.768565,6.134477],
+		[45.768628,6.13397],
+		[45.768501,6.133579],
+		[45.768909,6.133249],
+		[45.769319,6.134946]
+	]).addTo(map);
 </script>
