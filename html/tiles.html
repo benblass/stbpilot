@@ -2,7 +2,7 @@
 <script type="text/javascript">
 
 	var map = L.map('map_container').setView([45.769, 6.135],18);
-	var tilesPath = '/static/maptiles/' + {{options.flight_zone}} + '/{z}/{x}/{y}.png';
+	var tilesPath = '/static/maptiles/' + "{{options.flight_zone}}" + '/{z}/{x}/{y}.png';
 
 	L.tileLayer(tilesPath , {maxZoom: 22, minZoom: 16}).addTo(map);
 	var flightzone = L.polygon([
