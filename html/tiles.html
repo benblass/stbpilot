@@ -1,17 +1,21 @@
 <div id="map_container"></div>
 <script type="text/javascript">
 
-	var map = L.map('map_container').setView([45.769, 6.135],18);
-	var tilesPath = '/static/maptiles/' + "{{options.flight_zone}}" + '/{z}/{x}/{y}.png';
+	var display_options = {{options.flight_area.display_options}};
+	var flight_zones = {{options.flight_area.flight_zones}};
 
-	L.tileLayer(tilesPath , {maxZoom: 22, minZoom: 16}).addTo(map);
-	var flightzone = L.polygon([
-		[45.769319,6.134946],
-		[45.768784,6.135258],
-		[45.768565,6.134477],
-		[45.768628,6.13397],
-		[45.768501,6.133579],
-		[45.768909,6.133249],
-		[45.769319,6.134946]
-	]).addTo(map);
+	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
+
+	var tilesPath = '/static/maptiles/' + "{{options.flight_area.name}}" + '/{z}/{x}/{y}.png';
+
+	L.tileLayer(tilesPath , {maxZoom: display_options.maxZoom, minZoom: display_options.minZoom}).addTo(map);
+	
+	var flight_zones_polys = [];
+	
+	for(var i=0; i<flight_zones.length; i++)
+		{
+			alert(flight_zones[i].name);
+			flight_zones_polys[i] = L.polygon(flight_zones[i].polygon).addTo(map);
+		}
+
 </script>

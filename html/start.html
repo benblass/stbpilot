@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Flight Control</title>
+</head>
+<body>
+{% include 'scripts.html' %}
+	<div id="map_renderbox">
+		{% include 'tiles.html' %}
+	</div>
+	<div id="position" style="border:solid;">
+		<div id="lat">Latitude: {{options.vehicle_location[0]}}</div>
+		<div id="lon">Longitude: {{options.vehicle_location[1]}}</div>
+	</div>
+ 	<div id="refresher" style="color:blue;border:solid;">Refresh</div>
+ 	<div id="debug"></div>
+ 	<div id="result"></div>
+ <script type="text/javascript" charset="utf-8">
+
+ 		function update_coords() {
+ 			$.getJSON('/vehicle', 
+ 				function(data) {
+					/*$("#lat").replaceWith("<div id='lat'>Latitude: " + data.position[0] + "</div>");
+					$("#lon").replaceWith("<div id='lon'>Longitude: " + data.position[1] + "</div>");
+					$("#debug").replaceWith("<div id='debug'>" + JSON.stringify(data) + "</div>");*/
+
+					$("#lat").text(data.position[0]);
+					$("#lon").text(data.position[1]);
+				});
+ 		}
+
+ 		$(document).ready(
+ 			function() {
+ 				setInterval(function() {
+ 					update_coords();
+ 				}, 500);
+ 			});
+
+ 		$('#refresher').on('click', 
+ 			function(e){
+ 				e.preventDefault();
+ 				update_coords();
+ 			});
+ </script>
+</body>
+</html>

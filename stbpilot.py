@@ -21,6 +21,8 @@ cherrypy_conf = {
 	}
 }
 
+#default drone configuration
+
 #////////////////////////////////////////////////////////////////
 class StBernard(object):
 	def __init__(self, homecoords=None):
@@ -47,7 +49,7 @@ class Templates:
 	def get_options(self):
 			return {
 					'vehicle_location': [],
-					'flight_zone': ''
+					'flight_area': {}
 			}
 
 	def index(self):
@@ -58,6 +60,47 @@ class Templates:
 		self.options['vehicle_location'] = params
 		self.options['flight_zone'] = 'leschaux'
 		return self.get_template('map')
+
+	def start(self, vehicle_location= None):
+
+		#[TODO] put all this definition in a separate config file
+
+		self.options["flight_area"] = {
+			"name" : "leschaux",
+			"display_options" : {
+					"center_coords" : [45.7683329, 6.1365896],
+					"zoom_level" : 18,
+					"maxZoom" : 19,
+				"minZoom": 17
+				},
+			"flight_zones" : [{
+								"name" : "leschaux",
+								"polygon": [[45.769319,6.134946],
+											[45.768784,6.135258],
+											[45.768565,6.134477],
+											[45.768628,6.13397],
+											[45.768501,6.133579],
+											[45.768909,6.133249],
+											[45.769319,6.134946]],
+								"intial_search": []
+							},
+							 {
+							 	"name": "laclusaz",
+							 	"polygon": [[45.77,6.134946],
+											[45.77879,6.135258],
+											[45.77854,6.134477],
+											[45.77863,6.13397],
+											[45.77852,6.133579],
+											[45.76891,6.133249],
+											[45.76933,6.134946]],
+								"intial_search": []
+							 }
+							]
+		}
+
+		self.options['vehicle_location'] = vehicle_location
+
+		return self.get_template('start')
 
 	def get_template(self, filename):
 		template = self.environment.get_template(filename + '.html')
@@ -81,6 +124,11 @@ class SbApp(object):
 	def map(self):
 		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
 		return self.templates.map(params)
+
+	@cherrypy.expose
+	def start(self):
+		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
+		return self.templates.start(params)
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
