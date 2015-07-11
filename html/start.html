@@ -17,22 +17,19 @@
  	<div id="result"></div>
  <script type="text/javascript" charset="utf-8">
 
- 		function update_coords() {
- 			$.getJSON('/vehicle', 
- 				function(data) {
-					/*$("#lat").replaceWith("<div id='lat'>Latitude: " + data.position[0] + "</div>");
-					$("#lon").replaceWith("<div id='lon'>Longitude: " + data.position[1] + "</div>");
-					$("#debug").replaceWith("<div id='debug'>" + JSON.stringify(data) + "</div>");*/
-
+ 		function update_coords(data) {
 					$("#lat").text(data.position[0]);
 					$("#lon").text(data.position[1]);
-				});
  		}
 
  		$(document).ready(
  			function() {
  				setInterval(function() {
- 					update_coords();
+ 					$.getJSON('/vehicle', function(data) {
+ 						update_coords(data);
+ 						update_marker(data);
+ 					}
+ 						);
  				}, 500);
  			});
 

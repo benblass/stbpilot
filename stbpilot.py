@@ -21,6 +21,9 @@ cherrypy_conf = {
 	}
 }
 
+configPath = 'assets/'
+configFile = 'flightarea.json'
+
 #default drone configuration
 
 #////////////////////////////////////////////////////////////////
@@ -61,45 +64,10 @@ class Templates:
 		self.options['flight_zone'] = 'leschaux'
 		return self.get_template('map')
 
-	def start(self, vehicle_location= None):
-
+	def start(self, flight_area = None, vehicle_location= None):
 		#[TODO] put all this definition in a separate config file
-
-		self.options["flight_area"] = {
-			"name" : "leschaux",
-			"display_options" : {
-					"center_coords" : [45.7683329, 6.1365896],
-					"zoom_level" : 18,
-					"maxZoom" : 19,
-				"minZoom": 17
-				},
-			"flight_zones" : [{
-								"name" : "leschaux",
-								"polygon": [[45.769319,6.134946],
-											[45.768784,6.135258],
-											[45.768565,6.134477],
-											[45.768628,6.13397],
-											[45.768501,6.133579],
-											[45.768909,6.133249],
-											[45.769319,6.134946]],
-								"intial_search": []
-							},
-							 {
-							 	"name": "laclusaz",
-							 	"polygon": [[45.77,6.134946],
-											[45.77879,6.135258],
-											[45.77854,6.134477],
-											[45.77863,6.13397],
-											[45.77852,6.133579],
-											[45.76891,6.133249],
-											[45.76933,6.134946]],
-								"intial_search": []
-							 }
-							]
-		}
-
+		self.options['flight_area'] = flight_area
 		self.options['vehicle_location'] = vehicle_location
-
 		return self.get_template('start')
 
 	def get_template(self, filename):
@@ -113,13 +81,17 @@ class SbApp(object):
 		Main Appp. Initiates a corresponding St-Bernard, Initiates the templates and serves the application URLs
 
 	"""
-	def __init__(self,stbernard=None):
+	def __init__(self,stbernard=None,flightarea=None):
 
 		self.droid = stbernard
+		self.flightarea = flightarea
 		print '[SBDEBUG] Instantiating template'
 		self.templates = Templates()
 		print '[SBDEBUG] Instantiated'
-	
+
+	def _log(self, message):
+		print "[APPDEBUG]: {0}".format(message)
+
 	@cherrypy.expose
 	def map(self):
 		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
@@ -128,11 +100,13 @@ class SbApp(object):
 	@cherrypy.expose
 	def start(self):
 		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
-		return self.templates.start(params)
+		return self.templates.start(self.flightarea,params)
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def vehicle(self):
+		position = self.droid.get_location()
+		self._log(position)
 		return dict(position=self.droid.get_location())
 #--SbApp-----------------------------------------------------
 
@@ -144,18 +118,25 @@ class Sensor(multiprocessing.Process):
 			time.sleep(1)
 		return
 
+def loadFlightArea(filename = ''):
+	json_data = open(filename).read()
+	return simplejson.loads(json_data)
 
 #__main__
 print '[SBDEBUG] Spawning StBernard'
-Rex = StBernard()
+rex = StBernard()
 print '[SBDEBUG] Spawned'
+
+print '[SBDEBUG] Loading flight area'
+flightArea = loadFlightArea(configPath + configFile)
+print '[SBDEBUG] loaded : ' + str(flightArea)
 
 sensoring = Sensor()
 sensoring.daemon = True
 sensoring.start()
 
 
-cherrypy.tree.mount(SbApp(Rex), '/', config=cherrypy_conf)
+cherrypy.tree.mount(SbApp(rex, flightArea), '/', config=cherrypy_conf)
 
 cherrypy.config.update({
             'server.socket_port': host_port,

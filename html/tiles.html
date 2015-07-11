@@ -14,8 +14,11 @@
 	
 	for(var i=0; i<flight_zones.length; i++)
 		{
-			alert(flight_zones[i].name);
 			flight_zones_polys[i] = L.polygon(flight_zones[i].polygon).addTo(map);
 		}
+
+	function update_marker(data) {
+		$('#debug').text(JSON.stringify(data));
+	}
 
 </script>
