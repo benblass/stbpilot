@@ -3,7 +3,7 @@
 
 	var display_options = {{options.flight_area.display_options}};
 	var flight_zones = {{options.flight_area.flight_zones}};
-	var vehicle_location = {{options.vehicle_location}};
+	var vehicle_location = {"type": "Point", "coordinates": {{options.vehicle_location}}};
 
 // Initiate the map
 	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
@@ -12,31 +12,69 @@
 
 	L.tileLayer(tilesPath , {maxZoom: display_options.maxZoom, minZoom: display_options.minZoom}).addTo(map);
 
-	L.geoJson(flight_zones, {style: function(feature) {
-		return {color: feature.properties.color};		
-	}}).addTo(map);
+	var zonesLayer = L.geoJson(flight_zones, {
+			style: function(feature) {
+				var style = {};
+				style.color = feature.properties.color;
+				style.dashArray = '10';
+				style.weight = '2';
+				return style;
+			},
+			onEachFeature: onEachFeature
+		});
+
+	map.addLayer(zonesLayer);
 
 //Initiate the drone marker
 	var droneIcon = L.icon({
 		iconUrl: '/static/img/droneicon.png',
-		iconSize: [32,32]
+		iconSize: [32,32],
+		iconAnchor: [16,16]
 	});
 
-	var droneMarker = L.marker(vehicle_location, {icon: droneIcon});
-	droneMarker.addTo(map);
+	var droneLayer = L.geoJson(vehicle_location, {
+				pointToLayer: function (feature, latlng) {
+					return L.marker(latlng, {icon: droneIcon});
+						}
+		}).addTo(map);
+
 
 
 //Update function
-
+	
 	function update_marker(data) {
-		droneMarker.setLatLng(data.position);
-		droneMarker.update();
+		vehicle_location = {"type": "Point", "coordinates": data.position};
+		map.removeLayer(droneLayer);
+		droneLayer = L.geoJson(vehicle_location, {
+				pointToLayer: function (feature, latlng) {
+					return L.marker(latlng, {icon: droneIcon});
+						}
+		}).addTo(map);
 	}
 
-	map.on('click', function(e) {
-		alert(e.target);
-	});
+	function highlightZone(e) {
+		var layer = e.target;
 
+		layer.setStyle({
+			weight: 5,
+			dashArray: '',
+			fillOpacity: 0.8
+		});
+	}
+	function resetHighlight(e) {
+		zonesLayer.resetStyle(e.target);
+	}
 
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());
+	}
+
+	function onEachFeature(feature, layer) {
+		layer.on({
+			mouseover: highlightZone,
+			mouseout: resetHighlight,
+			click: zoomToFeature
+		});
+	}
 
 </script>

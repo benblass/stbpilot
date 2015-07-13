@@ -39,7 +39,7 @@ class StBernard(object):
 		print "[SBDEBUG]: {0}".format(message)
 
 	def get_location(self):
-		return [self.vehicle.location.lat, self.vehicle.location.lon]
+		return [self.vehicle.location.lon, self.vehicle.location.lat]
 #--StBernard-----------------------------------------------------
 
 #////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ class SbApp(object):
 
 	@cherrypy.expose
 	def start(self):
-		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
+		params = [self.droid.vehicle.location.lon, self.droid.vehicle.location.lat]
 		return self.templates.start(self.flightarea,params)
 
 	@cherrypy.expose
