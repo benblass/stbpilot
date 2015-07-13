@@ -11,14 +11,11 @@
 	var tilesPath = '/static/maptiles/' + "{{options.flight_area.name}}" + '/{z}/{x}/{y}.png';
 
 	L.tileLayer(tilesPath , {maxZoom: display_options.maxZoom, minZoom: display_options.minZoom}).addTo(map);
-	
-//Initiate the fligth zones
-	var flight_zones_polys = [];
-	
-	for(var i=0; i<flight_zones.length; i++)
-		{
-			flight_zones_polys[i] = L.polygon(flight_zones[i].polygon).addTo(map);
-		}10
+
+	L.geoJson(flight_zones, {style: function(feature) {
+		return {color: feature.properties.color};		
+	}}).addTo(map);
+
 //Initiate the drone marker
 	var droneIcon = L.icon({
 		iconUrl: '/static/img/droneicon.png',
@@ -35,5 +32,11 @@
 		droneMarker.setLatLng(data.position);
 		droneMarker.update();
 	}
+
+	map.on('click', function(e) {
+		alert(e.target);
+	});
+
+
 
 </script>

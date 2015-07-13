@@ -9,8 +9,8 @@
 		{% include 'tiles.html' %}
 	</div>
 	<div id="position" style="border:solid;">
-		<div id="lat">Latitude: {{options.vehicle_location[0]}}</div>
-		<div id="lon">Longitude: {{options.vehicle_location[1]}}</div>
+		<div id="lat">Latitude: <span>{{options.vehicle_location[0]}}</span></div>
+		<div id="lon">Longitude: <span>{{options.vehicle_location[1]}}</span></div>
 	</div>
  	<div id="refresher" style="color:blue;border:solid;">Refresh</div>
  	<div id="debug"></div>
@@ -18,8 +18,8 @@
  <script type="text/javascript" charset="utf-8">
 
  		function update_coords(data) {
-					$("#lat").text(data.position[0]);
-					$("#lon").text(data.position[1]);
+					$("#lat span").text(data.position[0]);
+					$("#lon span").text(data.position[1]);
  		}
 
  		$(document).ready(

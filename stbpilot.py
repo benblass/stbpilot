@@ -95,11 +95,6 @@ class SbApp(object):
 		print "[APPDEBUG]: {0}".format(message)
 
 	@cherrypy.expose
-	def map(self):
-		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
-		return self.templates.map(params)
-
-	@cherrypy.expose
 	def start(self):
 		params = [self.droid.vehicle.location.lat, self.droid.vehicle.location.lon]
 		return self.templates.start(self.flightarea,params)

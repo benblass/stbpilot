@@ -1,43 +1,74 @@
 {
 	"name" : "leschaux",
 	"display_options" : {
-			"center_coords" : [45.7683329, 6.1365896],
-			"zoom_level" : 16,
-			"maxZoom" : 19,
-			"minZoom": 15
-		},
-	"flight_zones" : [{
-						"flname" : "Flight Zone 1",
-						"polygon": [[45.769319,6.134946],
-									[45.768784,6.135258],
-									[45.768565,6.134477],
-									[45.768628,6.13397],
-									[45.768501,6.133579],
-									[45.768909,6.133249],
-									[45.769319,6.134946]],
-						"intial_search": [],
-						"display_options" : {
-							"tilespath" : "leschaux",
-							"center_coords" : [45.768616, 6.134881],
-							"zoom_level" : 16,
-							"maxZoom" : 19,
-							"minZoom": 15
-						}
-					},
-					 {
-					 	"flname": "Flight Zone 2",
-					 	"polygon": [[45.769357,6.134642],
-									[45.769640,6.135678],
-									[45.770289,6.134589]],
-						"intial_search": []
-					 },
-					 {
-					 	"flname": "Flight Zone 3",
-					 	"polygon": [[45.770153,6.132967],
-									[45.770211,6.133485],
-									[45.769304,6.134319],
-									[45.769205,6.133478]],
-						"intial_search": []
-					 }					 
+		"center_coords" : [45.7683329, 6.1365896],
+		"zoom_level" : 16,
+		"maxZoom" : 19,
+		"minZoom": 15
+	},
+	"flight_zones" : {
+		"type": "FeatureCollection",
+		"features": [
+			{
+				"type": "Feature",
+				"geometry": {
+					"type": "Polygon",
+					"coordinates": [
+						[[6.134946,45.769319],
+						[6.135258,45.768784],
+						[6.134477,45.768565],
+						[6.13397,45.768628],
+						[6.133579,45.768501],
+						[6.133249,45.768909],
+						[6.134946,45.769319]]
 					]
+				},
+				"properties": {
+					"flname" : "Flight Zone 1",
+					"intial_search": [],
+					"color": "#ff0000",
+					"display_options" : {
+						"tilespath" : "leschaux",
+						"center_coords" : [45.768616, 6.134881],
+						"zoom_level" : 16,
+						"maxZoom" : 19,
+						"minZoom": 15
+					}
+				}
+			},
+			{
+				"type": "Feature",
+				"geometry":{
+					"type": "Polygon",
+					"coordinates": [
+						[[6.134642,45.769357],
+						[6.135678,45.769640],
+						[6.134589,45.770289]]
+					]
+				},
+				"properties" :{
+					"flname": "Flight Zone 2",
+					"color": "#00ff00",
+					"intial_search": []
+				}
+			},
+			{
+				"type": "Feature",
+				"geometry":{
+					"type": "Polygon",
+					"coordinates": [
+						[[6.132967,45.770153],
+						[6.133485,45.770211],
+						[6.134319,45.769304],
+						[6.133478,45.769205]]
+					]
+				},
+				"properties": {
+	 				"flname": "Flight Zone 3",
+	 				"color": "#0000ff",
+					"intial_search": []
+				}
+			}
+		]
+	}
 }
