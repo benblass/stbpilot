@@ -8,20 +8,21 @@
 	<div id="map_renderbox">
 		{% include 'tiles.html' %}
 	</div>
+	<div id ="button_box">
+		{% include 'controls.html' %}
+	</div>
 	<div id="position" style="border:solid;">
-		<div id="lat">Latitude: <span>{{options.vehicle_location[0]}}</span></div>
-		<div id="lon">Longitude: <span>{{options.vehicle_location[1]}}</span></div>
+		<div id="lat">Longitude: <span>{{options.vehicle_location[0]}}</span></div>
+		<div id="lon">Latitude: <span>{{options.vehicle_location[1]}}</span></div>
 	</div>
  	<div id="refresher" style="color:blue;border:solid;">Refresh</div>
  	<div id="debug"></div>
  	<div id="result"></div>
  <script type="text/javascript" charset="utf-8">
-
  		function update_coords(data) {
 					$("#lat span").text(data.position[0]);
 					$("#lon span").text(data.position[1]);
  		}
-
  		$(document).ready(
  			function() {
  				setInterval(function() {
@@ -32,7 +33,6 @@
  						);
  				}, 500);
  			});
-
  		$('#refresher').on('click', 
  			function(e){
  				e.preventDefault();

@@ -25,6 +25,7 @@
 				},
 				"properties": {
 					"flname" : "Flight Zone 1",
+					"index" : 0,
 					"intial_search": [],
 					"color": "#ff0000",
 					"display_options" : {
@@ -48,6 +49,7 @@
 				},
 				"properties" :{
 					"flname": "Flight Zone 2",
+					"index" : 1,
 					"color": "#00ff00",
 					"intial_search": []
 				}
@@ -65,6 +67,7 @@
 				},
 				"properties": {
 	 				"flname": "Flight Zone 3",
+	 				"index" : 2,
 	 				"color": "#0000ff",
 					"intial_search": []
 				}

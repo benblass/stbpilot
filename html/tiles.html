@@ -38,7 +38,23 @@
 						}
 		}).addTo(map);
 
+//Initiate the control box
 
+var info = L.control();
+
+info.onAdd = function(map) {
+	this._div = L.DomUtil.create('div', 'info');
+	this.update();
+	return this._div;
+}
+
+info.update = function (properties) {
+	if (properties) {
+		this._div.innerHTML = '<h4> Zone de Vol </h4>' + (properties ? '<b>Secteur "' + properties.flname + '"</b>' : '{{options.flight_area.name}}') + (properties.selected ? '<br><b>Selected</b>' : '');
+	}
+}
+
+info.addTo(map);
 
 //Update function
 	
@@ -52,9 +68,11 @@
 		}).addTo(map);
 	}
 
+//User Interation functions
+
 	function highlightZone(e) {
 		var layer = e.target;
-
+		info.update(layer.feature.properties);
 		layer.setStyle({
 			weight: 5,
 			dashArray: '',
@@ -63,18 +81,59 @@
 	}
 	function resetHighlight(e) {
 		zonesLayer.resetStyle(e.target);
+		info.update();
 	}
 
 	function zoomToFeature(e) {
-		map.fitBounds(e.target.getBounds());
+		zonebounds = e.target.getBounds();
+		map.fitBounds(zonebounds.extend(droneLayer.getBounds()));
+	}
+
+	function blockEventListeners(e) {
+		zonesLayer.eachLayer(function(layer) {
+			layer.off({
+				mouseover: highlightZone,
+				mouseout: resetHighlight,
+				click: clickZone
+			});
+		})
+			e.target.on('click', clickZone);
+	}
+
+	function resetEventListeners(e) {
+		zonesLayer.eachLayer(function(layer) {
+			layer.on({
+				mouseover: highlightZone,
+				mouseout: resetHighlight,
+				click: clickZone
+			});
+		});
+	}
+
+	function clickZone(e) {
+		if (e.target.feature.properties.selected){
+
+			e.target.feature.properties.selected = 0;
+			resetEventListeners(e);
+			zone_unselected();
+		
+		}else{
+		
+			e.target.feature.properties.selected = 1;
+
+			blockEventListeners(e);
+
+			zoomToFeature(e);
+			info.update(e.target.feature.properties);
+			zone_selected(e.target.feature.properties.index);
+		}
 	}
 
 	function onEachFeature(feature, layer) {
 		layer.on({
 			mouseover: highlightZone,
 			mouseout: resetHighlight,
-			click: zoomToFeature
+			click: clickZone
 		});
 	}
-
 </script>
