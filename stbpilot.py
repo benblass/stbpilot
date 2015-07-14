@@ -100,6 +100,12 @@ class SbApp(object):
 		return self.templates.start(self.flightarea,params)
 
 	@cherrypy.expose
+	def initial_search(self,flindex):
+		targetFlightZone = flightArea['flight_zones']['features'][int(flindex)]['properties']
+		self._log('Initial Search started to ' + targetFlightZone['flname'])
+		return
+
+	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def vehicle(self):
 		position = self.droid.get_location()

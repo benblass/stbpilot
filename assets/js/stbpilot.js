@@ -18,8 +18,11 @@ function zone_unselected() {
 
 function initiate_search(index) {
 	$('#search_button').addClass('clicked');
-	$('#search_button').removeClass("activated");
+	$('#search_button').removeClass('activated');
 	$('#search_button').off();
+
+	$.post('/initial_search', {flindex: index});
+
 	$("#result").text("Initiating search on Flight Zone " + flight_zones.features[index].properties.flname);
 	return;
 }
