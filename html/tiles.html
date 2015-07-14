@@ -5,6 +5,9 @@
 	var flight_zones = {{options.flight_area.flight_zones}};
 	var vehicle_location = {"type": "Point", "coordinates": {{options.vehicle_location}}};
 
+	var flightzone_search = {};
+	var searchLayerG = {};
+
 // Initiate the map
 	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
 
@@ -38,34 +41,114 @@
 						}
 		}).addTo(map);
 
+//Initiate the search markers
+	var targetIcon = L.icon({
+		iconUrl: '/static/img/targeticon.png',
+		iconSize: [32,32],
+		iconAnchor: [16,16]
+	});
+
+	var wpIcon = L.icon({
+		iconUrl: '/static/img/wpicon.png',
+		iconSize: [32,32],
+		iconAnchor:[16,16]
+	});
+
 //Initiate the control box
-
-var info = L.control();
-
-info.onAdd = function(map) {
-	this._div = L.DomUtil.create('div', 'info');
-	this.update();
-	return this._div;
-}
-
-info.update = function (properties) {
-	if (properties) {
-		this._div.innerHTML = '<h4> Zone de Vol </h4>' + (properties ? '<b>Secteur "' + properties.flname + '"</b>' : '{{options.flight_area.name}}') + (properties.selected ? '<br><b>Selected</b>' : '');
-	}
-}
-
-info.addTo(map);
-
-//Update function
 	
-	function update_marker(data) {
-		vehicle_location = {"type": "Point", "coordinates": data.position};
+	var info = L.control();
+
+	info.onAdd = function(map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	}
+
+	info.update = function (properties) {
+		if (properties) {
+			this._div.innerHTML = '<h4> Zone de Vol </h4>' + (properties ? '<b>Secteur "' + properties.flname + '"</b>' : '{{options.flight_area.name}}') + (properties.selected ? '<br><b>Selected</b>' : '');
+		}
+	}
+
+	info.addTo(map);
+
+	//Update the marker
+	
+	function update_marker(position) {
+		vehicle_location = {"type": "Point", "coordinates": position};
 		map.removeLayer(droneLayer);
 		droneLayer = L.geoJson(vehicle_location, {
 				pointToLayer: function (feature, latlng) {
 					return L.marker(latlng, {icon: droneIcon});
 						}
 		}).addTo(map);
+
+		if (!jQuery.isEmptyObject(flightzone_search)) {
+			zonebounds = flightzone_search.getBounds();
+			map.fitBounds(zonebounds.extend(droneLayer.getBounds()));
+		}
+	}
+
+	function update_flightpath(search_data) {
+		
+		if(!jQuery.isEmptyObject(searchLayerG)) {
+			map.removeLayer(searchLayerG);	
+		}
+				searchLayerG = L.layerGroup();
+
+
+		targetlocation = {"type": "Point", "coordinates": search_data.waypoints[search_data.target]};
+		searchLayerG.addLayer(L.geoJson(targetlocation, {
+			pointToLayer: function (feature, latlng) {
+				return L.marker(latlng, {icon: targetIcon});
+			}
+		}));
+
+		targetpath = {"type": "LineString", "coordinates": [ vehicle_location.coordinates , search_data.waypoints[search_data.target]]};
+		searchLayerG.addLayer(
+			L.geoJson(
+				targetpath, {
+					style: function(feature) {
+								var style = {};
+								style.color = 'green';
+								style.dashArray = '';
+								style.weight = '3';
+							return style;
+							}
+					}
+				)
+			);
+
+		for (i = search_data.target +1; i< search_data.waypoints.length; i++) {		
+				wpgeoJson = {'type': 'Point', 'coordinates': search_data.waypoints[i] };
+	
+				searchLayerG.addLayer(
+					L.geoJson(
+						wpgeoJson, {
+							pointToLayer: function (feature, latlng) {
+									return L.marker(latlng, {icon: wpIcon});
+								}
+							}
+						)
+					);
+			path = {"type": "LineString", "coordinates": search_data.waypoints.slice(search_data.target, search_data.waypoints.length)};
+
+			searchLayerG.addLayer(
+				L.geoJson(
+					path, {
+						style: function(feature) {
+								var style = {};
+								style.color = 'black';
+								style.dashArray = '';
+								style.weight = '3';
+							return style;
+							}
+					}
+				)
+			);
+		}	
+
+		searchLayerG.addTo(map);
 	}
 
 //User Interation functions
@@ -125,7 +208,7 @@ info.addTo(map);
 
 			zoomToFeature(e);
 			info.update(e.target.feature.properties);
-			zone_selected(e.target.feature.properties.index);
+			zone_selected(e);
 		}
 	}
 
@@ -135,5 +218,29 @@ info.addTo(map);
 			mouseout: resetHighlight,
 			click: clickZone
 		});
+	}
+
+	function map_searchconfig(e) {
+
+		flightzone_search = e.target;
+		
+		zonesLayer.eachLayer(function(layer) {
+
+			if (layer != flightzone_search) {
+				map.removeLayer(layer);
+			}else{
+				layer.off({
+					mouseover: highlightZone,
+					mouseout: resetHighlight,
+					click: clickZone
+				});
+
+				layer.setStyle({
+					weight: 5,
+					dashArray: '',
+					fillOpacity: 0.2
+				});
+			}
+		})
 	}
 </script>

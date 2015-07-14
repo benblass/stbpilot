@@ -1,11 +1,29 @@
 #map_container {
 	height: 360px;
-	width: 75%;
+	width: 73%;
 	border-radius: 10px;
+	float: left;
+}
+
+#console_container {
+	float: right;
+	height: 360px;
+	width: 24%;
+	padding: 3px;
+	background: #e00;
+
+}
+
+#console_content {
+	height: 300px;
+	overflow: auto;
+	background: #eee;
 }
 
 .button {
+	clear: both;
 	text-align: center;
+	width: 70%;
   background: #cccccc;
   background-image: -webkit-linear-gradient(top, #cccccc, #808080);
   background-image: -moz-linear-gradient(top, #cccccc, #808080);
@@ -50,7 +68,6 @@
   text-decoration: none;
   cursor: pointer;
 }
-
 
 .clicked {
   background: #d1d1d1;

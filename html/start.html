@@ -8,6 +8,10 @@
 	<div id="map_renderbox">
 		{% include 'tiles.html' %}
 	</div>
+	 <div id="console_container">
+	 	<h5>Console</h5>
+	 	<div id="console_content"></div>
+	 </div>
 	<div id ="button_box">
 		{% include 'controls.html' %}
 	</div>
@@ -18,20 +22,35 @@
  	<div id="refresher" style="color:blue;border:solid;">Refresh</div>
  	<div id="debug"></div>
  	<div id="result"></div>
+
  <script type="text/javascript" charset="utf-8">
- 		function update_coords(data) {
-					$("#lat span").text(data.position[0]);
-					$("#lon span").text(data.position[1]);
+ 		function update_coords(position) {
+					$("#lat span").text(position[0]);
+					$("#lon span").text(position[1]);
  		}
+
+ 		function update_console(console) {
+ 			$("#console_content").html(console.replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1'+ '<br>'+'$2'));
+ 		}
+
  		$(document).ready(
  			function() {
  				setInterval(function() {
- 					$.getJSON('/vehicle', function(data) {
- 						update_coords(data);
- 						update_marker(data);
- 					}
- 						);
- 				}, 500);
+
+			 					$.getJSON('/vehicle', function(data) {
+ 												update_coords(data.position);
+ 												update_marker(data.position);
+ 												update_console(data.console);
+ 											}
+ 										);
+ 								if (inSearchMode) {
+ 									$.getJSON('/search_status', function(search_data) {
+ 											update_flightpath(search_data);
+ 										}
+ 									);
+ 								}
+ 							}
+ 				, 500);
  			});
  		$('#refresher').on('click', 
  			function(e){

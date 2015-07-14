@@ -26,7 +26,14 @@
 				"properties": {
 					"flname" : "Flight Zone 1",
 					"index" : 0,
-					"intial_search": [],
+					"initial_search": [
+					[6.134294,45.768895],
+					[6.134983,45.769276],
+					[6.135169,45.768835],
+					[6.133404,45.768893],
+					[6.133596,45.768534]
+					],
+					"initial_search_alt": 20,
 					"color": "#ff0000",
 					"display_options" : {
 						"tilespath" : "leschaux",
