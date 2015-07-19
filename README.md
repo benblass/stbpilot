@@ -24,7 +24,7 @@ api start stbpilot.py
 |-README.md //this file
 
 
-As of V0.1:
 Will start serving on 127.0.0.1:8080/start : a map of the flight area considered, with the drone on the map and gps coordinates values, updated every 0.5s
+Select a flight zone and launch the search will trigger the initial flight plan
 
 
