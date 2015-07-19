@@ -1,10 +1,13 @@
 import cherrypy
 import os, os.path
 import time
+from datetime import datetime
 import sys
 import math
 import simplejson
 from jinja2 import Environment, FileSystemLoader
+
+from pydblite.sqlite import Database, Table
 
 from pymavlink import mavutil
 import droneapi.lib
@@ -125,6 +128,9 @@ class StBernard(object):
 
 		return {'waypoints' : initial_wp, 'altitude': initial_alt}
 
+	def initiate_sensing():
+		return
+
 	def initiate_search(self):
 		profile = self.load_fz_waypoints()
 		self.search_waypoints = profile['waypoints']
@@ -139,11 +145,16 @@ class StBernard(object):
 		self.takeoff(self.search_altitude)
 
 		self._log('Proceeding through flight plan')
-		
+
+
+		RDV_point = True
 		for wp in self.search_waypoints:
 			self.search_target = self.search_waypoints.index(wp)
 			self.goto(wp, self.search_altitude)
 			self.wait_pt_reached(wp, False)
+			if RDV_point:
+				initiate_sensing()
+				RDV_point = False
 
 	#//////Observers and callbacks
 	#// I did not get how obsevers work (or do not work in dronekit, so commented out for now)
@@ -243,13 +254,28 @@ class SbApp(object):
 		return dict(position=self.droid.get_location(), console = console)
 #--SbApp-----------------------------------------------------
 
+
+#--/////////////////////////////////////////////////////////
 class Sensor(multiprocessing.Process):
+	def __init__(self):
+		super(Sensor,self).__init__()
+		self.api = local_connect()
+		self.vehicle = self.api.get_vehicles()[0]
+
 	def run(self):
+		sense_db = Database('sensor/flight.db')
+		sense_table = Table('sensing_data', sense_db)
+		sense_table.create(('timestamp', 'REAL'), ('signal', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
+		sense_table.open()
+
 		while True:
-			#print 'Worker running'
-			#sys.stdout.flush()
-			time.sleep(1)
-		return
+			sense_table.insert(timestamp=time.time(), signal=0, lat=self.vehicle.location.lat, lon = self.vehicle.location.lon)
+			print "Writing..."
+			sense_db.commit()
+			time.sleep(2)
+
+
+#--Sensor-------------
 
 def _log(message):
 	print "[MAINDEBUG]: {0}".format(message)
@@ -274,10 +300,9 @@ _log('St Bernard Spawned')
 
 _log('Loading flight area')
 flightArea = loadFlightArea(configPath + configFile)
-_log(' loaded : ' + str(flightArea))
+_log(' loaded flight area')
 
 sensoring = Sensor()
-sensoring.daemon = True
 sensoring.start()
 
 
