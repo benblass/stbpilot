@@ -13,8 +13,6 @@ from pymavlink import mavutil
 import droneapi.lib
 from droneapi.lib import VehicleMode, Location, Command
 
-import multiprocessing
-
 host_ip = '0.0.0.0'
 host_port = 8080
 
@@ -37,7 +35,7 @@ configFile = 'flightarea.json'
 #////////////////////////////////////////////////////////////////
 
 class StBernard(object):
-	def __init__(self, homecoords=None):
+	def __init__(self, sense_db_path, homecoords=None):
 		self.api = local_connect()
 		self.vehicle = self.api.get_vehicles()[0]
 		self.commands = self.vehicle.commands
@@ -46,6 +44,12 @@ class StBernard(object):
 		self.search_waypoints = []
 		self.search_altitude = 0
 		self._log("StBernard spawned")
+
+		self.sense_db_path = sense_db_path
+		sense_db = Database(self.sense_db_path)
+		sense_table = Table('sensing_data', sense_db)
+		sense_table.create(('timestamp', 'REAL'), ('signal', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
+		sense_table.commit()
 
 		#self.vehicle.add_attribute_observer('armed', self.armed_callback)
 		#self.vehicle.add_attribute_observer('mode', self.mode_callback)
@@ -100,7 +104,6 @@ class StBernard(object):
 		)
 		self.vehicle.flush()
 
-
 	#///Utility functions
 	def wait_pt_reached(self, location, log=False):
 		while self.vehicle.mode.name == 'GUIDED' and self.vehicle.armed:
@@ -129,7 +132,13 @@ class StBernard(object):
 
 		return {'waypoints' : initial_wp, 'altitude': initial_alt}
 
-	def initiate_sensing(self):
+	def sense(self):
+		time.sleep(1.5)
+		sense_db = Database(self.sense_db_path)
+		sense_table = Table('sensing_data', sense_db)
+		sense_table.open()
+		sense_table.insert(timestamp=time.time(), signal=0, lat=self.vehicle.location.lat, lon =self.vehicle.location.lon)
+		sense_table.commit()
 		return
 
 	def initiate_search(self):
@@ -153,9 +162,7 @@ class StBernard(object):
 			self.search_target = self.search_waypoints.index(wp)
 			self.goto(wp, self.search_altitude)
 			self.wait_pt_reached(wp, False)
-			if RDV_point:
-				self.initiate_sensing()
-				RDV_point = False
+			self.sense()
 
 	#//////Observers and callbacks
 	#// I did not get how obsevers work (or do not work in dronekit, so commented out for now)
@@ -269,27 +276,6 @@ class SbApp(object):
 
 
 #--/////////////////////////////////////////////////////////
-class Sensor(multiprocessing.Process):
-	def __init__(self):
-		super(Sensor,self).__init__()
-
-	def run(self):
-		
-		sense_db = Database('sensor/flight.db')
-		sense_table = Table('sensing_data', sense_db)
-		sense_table.create(('timestamp', 'REAL'), ('signal', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
-		sense_table.open()
-
-		while True:
-			api = local_connect()
-			droid = api.get_vehicles()[0]
-			print str(droid.location)
-			sense_table.insert(timestamp=time.time(), signal=0, lat=droid.location.lat, lon =droid.location.lon)
-			sense_db.commit()
-			time.sleep(2)
-
-
-#--Sensor-------------
 
 def _log(message):
 	print "[MAINDEBUG]: {0}".format(message)
@@ -309,24 +295,25 @@ def _console(message):
 console = time.strftime("%c") + "Initating console \n"
 
 _log('Spawning StBernard')
-rex = StBernard()
+rex = StBernard('sensor/flight.db')
 _log('St Bernard Spawned')
 
 _log('Loading flight area')
 flightArea = loadFlightArea(configPath + configFile)
 _log(' loaded flight area')
 
-sensoring = Sensor()
-sensoring.start()
-
-
 cherrypy.tree.mount(SbApp(rex, flightArea), '/', config=cherrypy_conf)
 
 cherrypy.config.update({
             'server.socket_port': host_port,
             'server.socket_host': host_ip,
-            'log.screen': False
+            'log.screen': False,
+            'server.logToScreen': False,
+            'environment': 'embedded'
          })
+#Supressses all cherrypy output to ease debugging
+cherrypy.log.error_log.propagate = False
+cherrypy.log.access_log.propagate = False
 
 cherrypy.engine.start()
 cherrypy.engine.block()
