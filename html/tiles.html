@@ -7,6 +7,7 @@
 
 	var flightzone_search = {};
 	var searchLayerG = {};
+	var signalLayerG = {};
 
 // Initiate the map
 	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
@@ -89,12 +90,58 @@
 		}
 	}
 
+	function getSignalMarkerOptions(signal) {
+		return {
+			radius: 8,
+			fillColor: "#ff7800",
+			color:  "#000",
+			weight: 1,
+			opacity: 1,
+			fillOpacity: 0.8
+		};
+	}
+
+	function show_search_data(data) {
+		if(!jQuery.isEmptyObject(signalLayerG)) {
+			map.removeLayer(signalLayerG);
+		}
+
+		console.log(data);
+
+		signalLayerG = L.layerGroup();
+
+		for(i=0; i<data.length; i++) {
+
+			sigpt = data[i];
+
+			signalpoint = {
+				"type": "Feature", 
+				"geometry": {
+					"type": "Point",
+					"coordinates": [sigpt["lon"], sigpt["lat"]]},
+				"properties": {
+					"signal": sigpt["signal"]
+				}
+			};
+
+			signalLayerG.addLayer(L.geoJson(signalpoint, {
+				pointToLayer: function(feature, latlng) {
+					return L.circleMarker(latlng, getSignalMarkerOptions(feature.properties.signal));
+				}
+			}));
+		}
+
+		signalLayerG.addTo(map);
+	}
+
+
 	function update_flightpath(search_data) {
 		
 		if(!jQuery.isEmptyObject(searchLayerG)) {
 			map.removeLayer(searchLayerG);	
 		}
-				searchLayerG = L.layerGroup();
+		
+		searchLayerG = L.layerGroup();
 
 
 		targetlocation = {"type": "Point", "coordinates": search_data.waypoints[search_data.target]};
@@ -149,6 +196,7 @@
 		}	
 
 		searchLayerG.addTo(map);
+
 	}
 
 //User Interation functions

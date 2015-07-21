@@ -35,6 +35,7 @@ configFile = 'flightarea.json'
 #default drone configuration
 
 #////////////////////////////////////////////////////////////////
+
 class StBernard(object):
 	def __init__(self, homecoords=None):
 		self.api = local_connect()
@@ -128,7 +129,7 @@ class StBernard(object):
 
 		return {'waypoints' : initial_wp, 'altitude': initial_alt}
 
-	def initiate_sensing():
+	def initiate_sensing(self):
 		return
 
 	def initiate_search(self):
@@ -153,7 +154,7 @@ class StBernard(object):
 			self.goto(wp, self.search_altitude)
 			self.wait_pt_reached(wp, False)
 			if RDV_point:
-				initiate_sensing()
+				self.initiate_sensing()
 				RDV_point = False
 
 	#//////Observers and callbacks
@@ -230,6 +231,13 @@ class SbApp(object):
 		_console(message)
 		print "[APP]: {0}".format(message)
 
+	def get_search_data(self):
+		sense_db = Database('sensor/flight.db')
+		sense_table = Table('sensing_data', sense_db)
+		sense_table.open()
+		search_data = [r for r in sense_table]
+		return search_data
+
 	@cherrypy.expose
 	def start(self):
 		params = [self.droid.vehicle.location.lon, self.droid.vehicle.location.lat]
@@ -245,8 +253,13 @@ class SbApp(object):
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
+	def search_data(self):
+		return dict(data = self.get_search_data())
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def search_status(self):
-		return dict(waypoints = self.droid.get_search_waypoints(), target = self.droid.get_search_target(), altitude = self.droid.get_search_altitude())
+		return dict(waypoints = self.droid.get_search_waypoints(), target = self.droid.get_search_target(), altitude = self.droid.get_search_altitude(), search_data = self.get_search_data())
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
@@ -259,18 +272,19 @@ class SbApp(object):
 class Sensor(multiprocessing.Process):
 	def __init__(self):
 		super(Sensor,self).__init__()
-		self.api = local_connect()
-		self.vehicle = self.api.get_vehicles()[0]
 
 	def run(self):
+		
 		sense_db = Database('sensor/flight.db')
 		sense_table = Table('sensing_data', sense_db)
 		sense_table.create(('timestamp', 'REAL'), ('signal', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
 		sense_table.open()
 
 		while True:
-			sense_table.insert(timestamp=time.time(), signal=0, lat=self.vehicle.location.lat, lon = self.vehicle.location.lon)
-			print "Writing..."
+			api = local_connect()
+			droid = api.get_vehicles()[0]
+			print str(droid.location)
+			sense_table.insert(timestamp=time.time(), signal=0, lat=droid.location.lat, lon =droid.location.lon)
 			sense_db.commit()
 			time.sleep(2)
 

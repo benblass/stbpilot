@@ -44,8 +44,9 @@
  											}
  										);
  								if (inSearchMode) {
- 									$.getJSON('/search_status', function(search_data) {
- 											update_flightpath(search_data);
+ 									$.getJSON('/search_status', function(data) {
+ 											update_flightpath(data);
+ 											show_search_data(data.search_data);
  										}
  									);
  								}
