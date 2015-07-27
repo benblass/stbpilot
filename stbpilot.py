@@ -245,6 +245,9 @@ class SbApp(object):
 		search_data = [r for r in sense_table]
 		return search_data
 
+	def get_search_mesh(self):
+		return targetFlightZone['mesh'];
+
 	@cherrypy.expose
 	def start(self):
 		params = [self.droid.vehicle.location.lon, self.droid.vehicle.location.lat]
@@ -266,7 +269,11 @@ class SbApp(object):
 	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def search_status(self):
-		return dict(waypoints = self.droid.get_search_waypoints(), target = self.droid.get_search_target(), altitude = self.droid.get_search_altitude(), search_data = self.get_search_data())
+		return dict(waypoints = self.droid.get_search_waypoints(), 
+			zonemesh = self.get_search_mesh(), 
+			target = self.droid.get_search_target(), 
+			altitude = self.droid.get_search_altitude(), 
+			search_data = self.get_search_data())
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()

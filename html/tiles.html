@@ -101,18 +101,60 @@
 		};
 	}
 
+	function get_element_style(signal) {
+		return {
+				color: "#ff7800",
+				opacity: 0.5,
+				weight: 0,
+			}
+	}
+
+	function show_search_data2(zonemesh, data) {
+		if(!jQuery.isEmptyObject(signalLayerG)) {
+			map.removeLayer(signalLayerG);
+		}
+
+		signalLayerG = L.layerGroup();
+
+		for(var i=0; i<zonemesh.length; i++){
+			for (var j=0; j<data.length; j++) {
+				var sigpt = data[j];
+
+				if (is_pt_inside([sigpt["lon"], sigpt["lat"]], zonemesh[i])){
+
+					var element = {
+						"type": "Feature",
+						"geometry": {
+							"type": "Polygon",
+							"coordinates": [zonemesh[i]],
+						},
+						"properties": {
+							"signal": data[j]["signal"]
+						}
+					};
+
+					signalLayerG.addLayer(
+						L.geoJson(element, {
+								style: function(feature) {
+									return get_element_style(feature.properties.signal);
+								}})
+					);
+				}
+			}	
+		}
+		signalLayerG.addTo(map);
+	}
+
 	function show_search_data(data) {
 		if(!jQuery.isEmptyObject(signalLayerG)) {
 			map.removeLayer(signalLayerG);
 		}
 
-		console.log(data);
-
 		signalLayerG = L.layerGroup();
 
-		for(i=0; i<data.length; i++) {
+		for(var i=0; i<data.length; i++) {
 
-			sigpt = data[i];
+			var sigpt = data[i];
 
 			signalpoint = {
 				"type": "Feature", 

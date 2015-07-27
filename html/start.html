@@ -46,7 +46,7 @@
  								if (inSearchMode) {
  									$.getJSON('/search_status', function(data) {
  											update_flightpath(data);
- 											show_search_data(data.search_data);
+ 											show_search_data2(data.zonemesh , data.search_data);
  										}
  									);
  								}
