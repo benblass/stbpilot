@@ -9,6 +9,11 @@
 	var searchLayerG = {};
 	var signalLayerG = {};
 
+	//SIMULATION
+	var VICTIM_POSITION = [6.134387,45.769179];
+
+
+
 // Initiate the map
 	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
 
@@ -28,6 +33,20 @@
 		});
 
 	map.addLayer(zonesLayer);
+	//SIMULATION : Put the victim on the map (simulation)
+
+	var victimIcon = L.icon({
+		iconUrl: '/static/img/victimicon.png',
+		iconSize: [32,32],
+		iconAnchor: [16,16]
+	});
+	
+	victim_location = {"type": "Point", "coordinates": VICTIM_POSITION};
+	var victimLayer = L.geoJson(victim_location, {
+			pointToLayer: function (feature, latlng) {
+				return L.marker(latlng, {icon: victimIcon});
+			}
+	}).addTo(map);
 
 //Initiate the drone marker
 	var droneIcon = L.icon({
@@ -102,16 +121,21 @@
 	}
 
 	function get_element_style(signal) {
+
+		var rawcol = Math.floor(Math.random() *10);
+		var col = gradient(rawcol, 10,0);
+
 		return {
-				color: "#ff7800",
+				color: col,
 				opacity: 0.5,
 				weight: 0,
 			}
 	}
 
-	function show_search_data2(zonemesh, data) {
+	function show_search_data(zonemesh, data) {
 		if(!jQuery.isEmptyObject(signalLayerG)) {
 			map.removeLayer(signalLayerG);
+			signalLayerG = {};
 		}
 
 		signalLayerG = L.layerGroup();
@@ -121,6 +145,8 @@
 				var sigpt = data[j];
 
 				if (is_pt_inside([sigpt["lon"], sigpt["lat"]], zonemesh[i])){
+
+					$("#debug").append(" " + "[" + sigpt["lon"] + "," + sigpt["lat"] +"]" + " is in " + zonemesh[i].toString()+"<br>");
 
 					var element = {
 						"type": "Feature",
@@ -144,38 +170,6 @@
 		}
 		signalLayerG.addTo(map);
 	}
-
-	function show_search_data(data) {
-		if(!jQuery.isEmptyObject(signalLayerG)) {
-			map.removeLayer(signalLayerG);
-		}
-
-		signalLayerG = L.layerGroup();
-
-		for(var i=0; i<data.length; i++) {
-
-			var sigpt = data[i];
-
-			signalpoint = {
-				"type": "Feature", 
-				"geometry": {
-					"type": "Point",
-					"coordinates": [sigpt["lon"], sigpt["lat"]]},
-				"properties": {
-					"signal": sigpt["signal"]
-				}
-			};
-
-			signalLayerG.addLayer(L.geoJson(signalpoint, {
-				pointToLayer: function(feature, latlng) {
-					return L.circleMarker(latlng, getSignalMarkerOptions(feature.properties.signal));
-				}
-			}));
-		}
-
-		signalLayerG.addTo(map);
-	}
-
 
 	function update_flightpath(search_data) {
 		

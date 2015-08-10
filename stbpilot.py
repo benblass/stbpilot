@@ -13,8 +13,12 @@ from pymavlink import mavutil
 import droneapi.lib
 from droneapi.lib import VehicleMode, Location, Command
 
+#import victim_sim
+
 host_ip = '0.0.0.0'
 host_port = 8080
+
+print local_path
 
 cherrypy_conf = {
 	'/': {
@@ -32,6 +36,13 @@ configFile = 'flightarea.json'
 
 #default drone configuration
 
+#Antennas orientation compared to drone frame. Theta: in yaw, phi: in pitch
+antenna_1_framephi = 0
+antenna_1_frametheta = 0
+
+antenna_2_framephi = math.pi / 2
+antenna_2_frametheta = 0
+
 #////////////////////////////////////////////////////////////////
 
 class StBernard(object):
@@ -48,7 +59,7 @@ class StBernard(object):
 		self.sense_db_path = sense_db_path
 		sense_db = Database(self.sense_db_path)
 		sense_table = Table('sensing_data', sense_db)
-		sense_table.create(('timestamp', 'REAL'), ('signal', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
+		sense_table.create(('timestamp', 'REAL'), ('signal_ant1', 'REAL'), ('signal_ant2', 'REAL'), ('signal_ant3', 'REAL'), ('lat','REAL'),('lon','REAL'), mode="override")
 		sense_table.commit()
 
 		#self.vehicle.add_attribute_observer('armed', self.armed_callback)
@@ -113,7 +124,7 @@ class StBernard(object):
 			if distance < 1:
 				self._log('WP reached')
 				break;
-			time.sleep(1)
+			time.sleep(0.5)
 
 	def get_distance_meters(self,location1, location2):
 
@@ -137,7 +148,38 @@ class StBernard(object):
 		sense_db = Database(self.sense_db_path)
 		sense_table = Table('sensing_data', sense_db)
 		sense_table.open()
-		sense_table.insert(timestamp=time.time(), signal=0, lat=self.vehicle.location.lat, lon =self.vehicle.location.lon)
+
+		frame_phi = -self.vehicle.attitude.yaw
+		frame_theta = -self.vehicle.attitude.pitch
+
+		antenna1_phi = antenna_1_framephi+frame_phi
+		antenna1_theta = antenna_1_frametheta+frame_theta
+
+		antenna2_phi = antenna_2_framephi+frame_phi
+		antenna2_theta = antenna_2_frametheta+frame_theta
+		
+		antenna_1 = (self.vehicle.location.lon, 
+			self.vehicle.location.lat, 
+			self.vehicle.location.altitude,
+			antenna1_theta,
+			antenna1_phi)
+		
+		antenna_2 = (self.vehicle.location.lon, 
+			self.vehicle.location.lat, 
+			self.vehicle.location.altitude,
+			antenna2_theta,
+			antenna2_phi)
+		
+		signal_antenna_1 = get_antenna_reading(antenna_1)
+		signal_antenna_2 = get_antenna_reading(antenna_2)
+		#signal_antenna_3 
+
+		sense_table.insert(timestamp=time.time(), 
+			signal_ant1=signal_antenna_1,
+			signal_ant2=signal_antenna_2,
+			signal_ant3=signal_antenna_3, 
+			lat=self.vehicle.location.lat, 
+			lon =self.vehicle.location.lon)
 		sense_table.commit()
 		return
 
@@ -239,6 +281,9 @@ class SbApp(object):
 		print "[APP]: {0}".format(message)
 
 	def get_search_data(self):
+		"""
+		Probably needs some optimisation since the table can become very large
+		"""
 		sense_db = Database('sensor/flight.db')
 		sense_table = Table('sensing_data', sense_db)
 		sense_table.open()

@@ -92,7 +92,7 @@
 				y = a2*x+b2;
 			}
 
-			if (seg2_pt_X[0] == seg2_pt_Y[0]) {
+			if (seg2_pt_X[0] == seg2_pt_Y[0]) { //seg2 is vertical
 				//intersection
 				x = seg2_pt_X[0];
 				y = a1*x+b1;
@@ -111,12 +111,20 @@
 				return false;
 			}
 
-			if ( (x <= Math.max(seg1_pt_A[0], seg1_pt_B[0]) ) && (x >= Math.min(seg1_pt_A[0], seg1_pt_B[0]))) {
-				if ((x<=Math.max(seg2_pt_X[0], seg2_pt_Y[0]))&&(x>= Math.min(seg2_pt_X[0], seg2_pt_Y[0]))) {
+			if ( (x <= Math.max(seg1_pt_A[0], seg1_pt_B[0]) ) && (x >= Math.min(seg1_pt_A[0], seg1_pt_B[0])) && 
+				 (y <= Math.max(seg1_pt_A[1], seg1_pt_B[1]) ) && (y >= Math.min(seg1_pt_A[1], seg1_pt_B[1])) 
+				 ) { // is on seg1
+				if ( (x <= Math.max(seg2_pt_X[0], seg2_pt_Y[0])) && (x >= Math.min(seg2_pt_X[0], seg2_pt_Y[0])) &&
+					 (y <= Math.max(seg2_pt_X[1], seg2_pt_Y[1])) && (y >= Math.min(seg2_pt_X[1], seg2_pt_Y[1]))
+					 ) { //is on seg 2
 					return [x,y];
+					}
 				}
-			}
 			return false;
+		}
+
+		function pt_is_on_seg(pt,seg){
+			return 
 		}
 
 		function seg_intersect_poly(seg, poly){
