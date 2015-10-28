@@ -151,30 +151,25 @@ class StBernard(object):
 
 	def sense(self):
 		#time.sleep(1.5)
-		self._debug('db')
 		sense_db = Database(self.sense_db_path)
 		sense_table = Table('sensing_data', sense_db)
 		sense_table.open()
 
-		self._debug('init')
 		frame_phi = -self.vehicle.attitude.yaw
 		frame_theta = -self.vehicle.attitude.pitch
 
-		self._debug('init 2')
 		antenna1_phi = antenna_1_framephi+frame_phi
 		antenna1_theta = antenna_1_frametheta+frame_theta
 
 		antenna2_phi = antenna_2_framephi+frame_phi
 		antenna2_theta = antenna_2_frametheta+frame_theta
 		
-		self._debug('init ant')
 		# #antenna_1 = (self.vehicle.location.lon, 
 		# 	self.vehicle.location.lat, 
 		# 	self.vehicle.location.altitude,
 		# 	antenna1_theta,
 		# 	antenna1_phi)
 		
-		self._debug('init ant 2')
 		# #antenna_2 = (self.vehicle.location.lon, 
 		# 	self.vehicle.location.lat, 
 		# 	self.vehicle.location.altitude,
@@ -189,7 +184,6 @@ class StBernard(object):
 		signal_antenna_2 = 0
 		signal_antenna_3 = 0
 
-		self._debug('db_write')
 		sense_table.insert(timestamp=time.time(), 
 			signal_ant1=signal_antenna_1,
 			signal_ant2=signal_antenna_2,
@@ -220,9 +214,7 @@ class StBernard(object):
 			self.search_target = self.search_waypoints.index(wp)
 			self.goto(wp, self.search_altitude)
 			self.wait_pt_reached(wp, False)
-			self._log('Sensing')
 			self.sense()
-			self._log('Done sensing')
 
 #--StBernard-----------------------------------------------------
 
