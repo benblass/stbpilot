@@ -10,14 +10,18 @@ from jinja2 import Environment, FileSystemLoader
 from pydblite.sqlite import Database, Table
 
 from pymavlink import mavutil
-import droneapi.lib
-from droneapi.lib import VehicleMode, Location, Command
+from dronekit import connect
+from dronekit.lib import VehicleMode, Location, Command
 
 #import victim_sim
+
+
+#cherrypy configuration
 
 host_ip = '0.0.0.0'
 host_port = 8080
 
+local_path=os.path.dirname(os.path.abspath(__file__))
 print local_path
 
 cherrypy_conf = {
@@ -36,6 +40,8 @@ configFile = 'flightarea.json'
 
 #default drone configuration
 
+MASTER = '10.0.2.15:14553'
+
 #Antennas orientation compared to drone frame. Theta: in yaw, phi: in pitch
 antenna_1_framephi = 0
 antenna_1_frametheta = 0
@@ -46,9 +52,9 @@ antenna_2_frametheta = 0
 #////////////////////////////////////////////////////////////////
 
 class StBernard(object):
-	def __init__(self, sense_db_path, homecoords=None):
-		self.api = local_connect()
-		self.vehicle = self.api.get_vehicles()[0]
+	def __init__(self, sense_db_path, master, homecoords=None):
+		self._log("Connecting")
+		self.vehicle = connect(master, await_params=True)
 		self.commands = self.vehicle.commands
 		self.homecoords = homecoords
 		self.search_target = 0
@@ -144,36 +150,46 @@ class StBernard(object):
 		return {'waypoints' : initial_wp, 'altitude': initial_alt}
 
 	def sense(self):
-		time.sleep(1.5)
+		#time.sleep(1.5)
+		self._debug('db')
 		sense_db = Database(self.sense_db_path)
 		sense_table = Table('sensing_data', sense_db)
 		sense_table.open()
 
+		self._debug('init')
 		frame_phi = -self.vehicle.attitude.yaw
 		frame_theta = -self.vehicle.attitude.pitch
 
+		self._debug('init 2')
 		antenna1_phi = antenna_1_framephi+frame_phi
 		antenna1_theta = antenna_1_frametheta+frame_theta
 
 		antenna2_phi = antenna_2_framephi+frame_phi
 		antenna2_theta = antenna_2_frametheta+frame_theta
 		
-		antenna_1 = (self.vehicle.location.lon, 
-			self.vehicle.location.lat, 
-			self.vehicle.location.altitude,
-			antenna1_theta,
-			antenna1_phi)
+		self._debug('init ant')
+		# #antenna_1 = (self.vehicle.location.lon, 
+		# 	self.vehicle.location.lat, 
+		# 	self.vehicle.location.altitude,
+		# 	antenna1_theta,
+		# 	antenna1_phi)
 		
-		antenna_2 = (self.vehicle.location.lon, 
-			self.vehicle.location.lat, 
-			self.vehicle.location.altitude,
-			antenna2_theta,
-			antenna2_phi)
+		self._debug('init ant 2')
+		# #antenna_2 = (self.vehicle.location.lon, 
+		# 	self.vehicle.location.lat, 
+		# 	self.vehicle.location.altitude,
+		# 	antenna2_theta,
+		# 	antenna2_phi)
 		
-		signal_antenna_1 = get_antenna_reading(antenna_1)
-		signal_antenna_2 = get_antenna_reading(antenna_2)
+		#signal_antenna_1 = get_antenna_reading(antenna_1)
+		#signal_antenna_2 = get_antenna_reading(antenna_2)
 		#signal_antenna_3 
 
+		signal_antenna_1 = 0
+		signal_antenna_2 = 0
+		signal_antenna_3 = 0
+
+		self._debug('db_write')
 		sense_table.insert(timestamp=time.time(), 
 			signal_ant1=signal_antenna_1,
 			signal_ant2=signal_antenna_2,
@@ -204,24 +220,10 @@ class StBernard(object):
 			self.search_target = self.search_waypoints.index(wp)
 			self.goto(wp, self.search_altitude)
 			self.wait_pt_reached(wp, False)
+			self._log('Sensing')
 			self.sense()
+			self._log('Done sensing')
 
-	#//////Observers and callbacks
-	#// I did not get how obsevers work (or do not work in dronekit, so commented out for now)
-"""
-	def armed_callback(self, armed):
-		self._log("Armed !")
-		self.vehicle.remove_attribute_observer('armed', self.armed_callback)
-		self.vehicle.add_attribute_observer('disarmed', self.disarmed_callback)
-
-	def disarmed_callback(self, disarmed):
-		self._log('Disarmed !')
-		self.vehicle.remove_attribute_observer('disarmed', self.armed_callback)
-		self.vehicle.add_attribute_observer('armed', self.armed_callback)
-
-	def mode_callback(self, mode):
-		self._log("Now in mode {0}".format(self.vehicle.mode))
-"""
 #--StBernard-----------------------------------------------------
 
 #////////////////////////////////////////////////////////////////
@@ -347,7 +349,7 @@ def _console(message):
 console = time.strftime("%c") + "Initating console \n"
 
 _log('Spawning StBernard')
-rex = StBernard('sensor/flight.db')
+rex = StBernard('sensor/flight.db', MASTER)
 _log('St Bernard Spawned')
 
 _log('Loading flight area')
