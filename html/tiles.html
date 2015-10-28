@@ -122,7 +122,8 @@
 
 	function get_element_style(signal) {
 
-		var rawcol = Math.floor(Math.random() *10);
+		//var rawcol = Math.floor(Math.random() *10);
+		var rawcol = signal
 		var col = gradient(rawcol, 10,0);
 
 		return {
@@ -146,8 +147,6 @@
 
 				if (is_pt_inside([sigpt["lon"], sigpt["lat"]], zonemesh[i])){
 
-					$("#debug").append(" " + "[" + sigpt["lon"] + "," + sigpt["lat"] +"]" + " is in " + zonemesh[i].toString()+"<br>");
-
 					var element = {
 						"type": "Feature",
 						"geometry": {
@@ -155,7 +154,7 @@
 							"coordinates": [zonemesh[i]],
 						},
 						"properties": {
-							"signal": data[j]["signal"]
+							"signal": data[j]["signal_ant1"]
 						}
 					};
 

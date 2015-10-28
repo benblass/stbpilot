@@ -13,8 +13,7 @@ from pymavlink import mavutil
 from dronekit import connect
 from dronekit.lib import VehicleMode, Location, Command
 
-#import victim_sim
-
+import victim_sim
 
 #cherrypy configuration
 
@@ -180,9 +179,9 @@ class StBernard(object):
 		#signal_antenna_2 = get_antenna_reading(antenna_2)
 		#signal_antenna_3 
 
-		signal_antenna_1 = 0
-		signal_antenna_2 = 0
-		signal_antenna_3 = 0
+		signal_antenna_1 = 5
+		signal_antenna_2 = 5
+		signal_antenna_3 = 5
 
 		sense_table.insert(timestamp=time.time(), 
 			signal_ant1=signal_antenna_1,
