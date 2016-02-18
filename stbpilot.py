@@ -3,16 +3,11 @@ import os
 import os.path
 import time
 import math
-import simplejson
-from jinja2 import Environment, FileSystemLoader
 
 from pydblite.sqlite import Database, Table
 
-from pymavlink import mavutil
 from dronekit import connect
 from dronekit.lib import VehicleMode, Location
-
-import victim_sim
 
 # cherrypy configuration
 
@@ -33,9 +28,6 @@ cherrypy_conf = {
     }
 }
 
-configPath = 'assets/'
-configFile = 'flightarea.json'
-
 # default drone configuration
 
 MASTER = '10.0.2.15:14553'
@@ -51,14 +43,14 @@ antenna_2_frametheta = 0
 
 
 class StBernard(object):
+    """
+    Object representing the autopilot.
+    """
     def __init__(self, sense_db_path, master, homecoords=None):
         self._log("Connecting")
         self.vehicle = connect(master, await_params=True)
         self.commands = self.vehicle.commands
         self.homecoords = homecoords
-        self.search_target = 0
-        self.search_waypoints = []
-        self.search_altitude = 0
         self._log("StBernard spawned")
 
         self.sense_db_path = sense_db_path
@@ -68,11 +60,7 @@ class StBernard(object):
             ('timestamp', 'REAL'), ('signal_ant1', 'REAL'),
             ('signal_ant2', 'REAL'), ('signal_ant3', 'REAL'), ('lat', 'REAL'),
             ('lon', 'REAL'), mode="override")
-
         sense_table.commit()
-
-        # self.vehicle.add_attribute_observer('armed', self.armed_callback)
-        # self.vehicle.add_attribute_observer('mode', self.mode_callback)
 
     def _debug(self, message):
         print "[SBDEBUG]: {0}".format(message)
@@ -83,15 +71,6 @@ class StBernard(object):
 
     def get_location(self):
         return [self.vehicle.location.lon, self.vehicle.location.lat]
-
-    def get_search_waypoints(self):
-        return self.search_waypoints
-
-    def get_search_altitude(self):
-        return self.search_altitude
-
-    def get_search_target(self):
-        return self.search_target
 
     # ////Flight and operation functions
     def takeoff(self, toAltitude):
@@ -144,22 +123,20 @@ class StBernard(object):
 
         return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
 
+    def get_midway_point(self, location1, location2):
+        return [
+            1/2. * (location1[0]+location2[0]),
+            1/2. * (location1[1] + location2[1])
+            ]
+
     # ///Mission methods
-    def load_fz_waypoints(self):
-
-        initial_wp = targetFlightZone['initial_search']
-        initial_alt = targetFlightZone['initial_search_alt']
-
-        self._log('Waypoints loaded for '+targetFlightZone['flname'])
-
-        return {'waypoints': initial_wp, 'altitude': initial_alt}
-
     def sense(self):
         # time.sleep(1.5)
         sense_db = Database(self.sense_db_path)
         sense_table = Table('sensing_data', sense_db)
         sense_table.open()
 
+        start_sense_location = self.get_location()       
         frame_phi = -self.vehicle.attitude.yaw
         frame_theta = -self.vehicle.attitude.pitch
 
@@ -183,102 +160,37 @@ class StBernard(object):
 
         # signal_antenna_1 = get_antenna_reading(antenna_1)
         # signal_antenna_2 = get_antenna_reading(antenna_2)
-        # signal_antenna_3
 
         signal_antenna_1 = 5
         signal_antenna_2 = 5
-        signal_antenna_3 = 5
 
+        end_sense_location = self.get_location()
+
+        avg_sens_location = self.get_midway_point(
+            start_sense_location, end_sense_location
+            )
         sense_table.insert(
             timestamp=time.time(),
             signal_ant1=signal_antenna_1,
             signal_ant2=signal_antenna_2,
-            signal_ant3=signal_antenna_3,
-            lat=self.vehicle.location.lat,
-            lon=self.vehicle.location.lon
+            signal_ant3=0,
+            lat=avg_sens_location[1],
+            lon=avg_sens_location[0]
             )
         sense_table.commit()
         return
 
-    def initiate_search(self):
-        profile = self.load_fz_waypoints()
-        self.search_waypoints = profile['waypoints']
-        self.search_altitude = profile['altitude']
-
-        self._log('Taking off')
-        self.change_mode('GUIDED')
-        self.arm()
-
-        while not(self.vehicle.armed):
-            pass
-        self.takeoff(self.search_altitude)
-
-        self._log('Proceeding through flight plan')
-
-        for wp in self.search_waypoints:
-            self.search_target = self.search_waypoints.index(wp)
-            self.goto(wp, self.search_altitude)
-            self.wait_pt_reached(wp, False)
-            self.sense()
-
-# --StBernard-----------------------------------------------------
-# ////////////////////////////////////////////////////////////////
-
-
-class Templates:
-    def __init__(self, home_coords=None):
-        self.home_coords = home_coords
-        self.options = self.get_options()
-        self.environment = Environment(
-            loader=FileSystemLoader(local_path + '/html/')
-            )
-
-    def get_options(self):
-            return {
-                    'vehicle_location': [],
-                    'flight_area': {}
-            }
-
-    def _log(self, message):
-        print("[TMPDEBUG]: {0}".format(message))
-
-    def index(self):
-        self.options = self.get_options()
-        return self.get_template('index')
-
-    def map(self, params):
-        self.options['vehicle_location'] = params
-        self.options['flight_zone'] = 'leschaux'
-        return self.get_template('map')
-
-    def start(self, flight_area=None, vehicle_location=None):
-        # [TODO] put all this definition in a separate config file
-        self.options['flight_area'] = flight_area
-        self.options['vehicle_location'] = vehicle_location
-        return self.get_template('start')
-
-    def get_template(self, filename):
-        template = self.environment.get_template(filename + '.html')
-        return template.render(options=self.options)
-
-
-# --Templates-----------------------------------------------------
-# ////////////////////////////////////////////////////////////////
-
 
 class SbApp(object):
     """
-        Main Appp. Initiates a corresponding St-Bernard,
-        Initiates the templates and serves the application URLs
+        Main App. Initiates a corresponding St-Bernard,
+        Serves the autopilot data through endpoints
+
 
     """
     def __init__(self, stbernard=None, flightarea=None):
-
         self.droid = stbernard
         self.flightarea = flightarea
-        self._debug('Instantiating template')
-        self.templates = Templates()
-        self._debug('Instantiated')
 
     def _debug(self, message):
         print "[APPDEBUG]: {0}".format(message)
@@ -297,60 +209,33 @@ class SbApp(object):
         search_data = [r for r in sense_table]
         return search_data
 
-    def get_search_mesh(self):
-        return targetFlightZone['mesh']
-
-    @cherrypy.expose
-    def start(self):
-        params = [
-            self.droid.vehicle.location.lon,
-            self.droid.vehicle.location.lat
-            ]
-        return self.templates.start(self.flightarea, params)
-
-    @cherrypy.expose
-    def initial_search(self, flindex):
-        global targetFlightZone
-        targetFlightZone = flightArea['flight_zones'][
-            'features'][int(flindex)]['properties']
-        self._log('Initial Search started to ' + targetFlightZone['flname'])
-        self.droid.initiate_search()
-        return
+    def get_console(self):
+        return console
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def search_data(self):
-        return dict(data=self.get_search_data())
+    def sense_status(self):
+        return dict()
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def search_status(self):
-            return dict(
-                waypoints=self.droid.get_search_waypoints(),
-                zonemesh=self.get_search_mesh(),
-                target=self.droid.get_search_target(),
-                altitude=self.droid.get_search_altitude(),
-                search_data=self.get_search_data())
-
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def vehicle(self):
+    def vehicle_state(self):
         return dict(position=self.droid.get_location(), console=console)
 
-# --SbApp-----------------------------------------------------
-# --/////////////////////////////////////////////////////////
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def command(self, cmd=None):
+        return dict()
 
 
 def _log(message):
     print "[MAINDEBUG]: {0}".format(message)
 
 
-def loadFlightArea(filename=''):
-    json_data = open(filename).read()
-    return simplejson.loads(json_data)
-
-
 def _console(message):
+    """
+    Remplacer par un push
+    """
     global console
     console = console + time.strftime("%c") + " : " + format(message) + '\n'
     return
@@ -363,10 +248,6 @@ console = time.strftime("%c") + "Initating console \n"
 _log('Spawning StBernard')
 rex = StBernard('sensor/flight.db', MASTER)
 _log('St Bernard Spawned')
-
-_log('Loading flight area')
-flightArea = loadFlightArea(configPath + configFile)
-_log(' loaded flight area')
 
 cherrypy.tree.mount(SbApp(rex, flightArea), '/', config=cherrypy_conf)
 
