@@ -1,0 +1,329 @@
+<div id="map_container"></div>
+<script type="text/javascript">
+
+	var display_options = {{options.flight_area.display_options}};
+	var flight_zones = {{options.flight_area.flight_zones}};
+	var vehicle_location = {"type": "Point", "coordinates": {{options.vehicle_location}}};
+
+	var flightzone_search = {};
+	var searchLayerG = {};
+	var signalLayerG = {};
+
+	//SIMULATION
+	var VICTIM_POSITION = [6.134387,45.769179];
+
+
+
+// Initiate the map
+	var map = L.map('map_container').setView(display_options.center_coords,display_options.zoom_level);
+
+	var tilesPath = '/static/maptiles/' + "{{options.flight_area.name}}" + '/{z}/{x}/{y}.png';
+
+	L.tileLayer(tilesPath , {maxZoom: display_options.maxZoom, minZoom: display_options.minZoom}).addTo(map);
+
+	var zonesLayer = L.geoJson(flight_zones, {
+			style: function(feature) {
+				var style = {};
+				style.color = feature.properties.color;
+				style.dashArray = '10';
+				style.weight = '2';
+				return style;
+			},
+			onEachFeature: onEachFeature
+		});
+
+	map.addLayer(zonesLayer);
+	//SIMULATION : Put the victim on the map (simulation)
+
+	var victimIcon = L.icon({
+		iconUrl: '/static/img/victimicon.png',
+		iconSize: [32,32],
+		iconAnchor: [16,16]
+	});
+	
+	victim_location = {"type": "Point", "coordinates": VICTIM_POSITION};
+	var victimLayer = L.geoJson(victim_location, {
+			pointToLayer: function (feature, latlng) {
+				return L.marker(latlng, {icon: victimIcon});
+			}
+	}).addTo(map);
+
+//Initiate the drone marker
+	var droneIcon = L.icon({
+		iconUrl: '/static/img/droneicon.png',
+		iconSize: [32,32],
+		iconAnchor: [16,16]
+	});
+
+	var droneLayer = L.geoJson(vehicle_location, {
+				pointToLayer: function (feature, latlng) {
+					return L.marker(latlng, {icon: droneIcon});
+						}
+		}).addTo(map);
+
+//Initiate the search markers
+	var targetIcon = L.icon({
+		iconUrl: '/static/img/targeticon.png',
+		iconSize: [32,32],
+		iconAnchor: [16,16]
+	});
+
+	var wpIcon = L.icon({
+		iconUrl: '/static/img/wpicon.png',
+		iconSize: [32,32],
+		iconAnchor:[16,16]
+	});
+
+//Initiate the control box
+	
+	var info = L.control();
+
+	info.onAdd = function(map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	}
+
+	info.update = function (properties) {
+		if (properties) {
+			this._div.innerHTML = '<h4> Zone de Vol </h4>' + (properties ? '<b>Secteur "' + properties.flname + '"</b>' : '{{options.flight_area.name}}') + (properties.selected ? '<br><b>Selected</b>' : '');
+		}
+	}
+
+	info.addTo(map);
+
+	//Update the marker
+	
+	function update_marker(position) {
+		vehicle_location = {"type": "Point", "coordinates": position};
+		map.removeLayer(droneLayer);
+		droneLayer = L.geoJson(vehicle_location, {
+				pointToLayer: function (feature, latlng) {
+					return L.marker(latlng, {icon: droneIcon});
+						}
+		}).addTo(map);
+
+		if (!jQuery.isEmptyObject(flightzone_search)) {
+			zonebounds = flightzone_search.getBounds();
+			map.fitBounds(zonebounds.extend(droneLayer.getBounds()));
+		}
+	}
+
+	function getSignalMarkerOptions(signal) {
+		return {
+			radius: 8,
+			fillColor: "#ff7800",
+			color:  "#000",
+			weight: 1,
+			opacity: 1,
+			fillOpacity: 0.8
+		};
+	}
+
+	function get_element_style(signal) {
+
+		//var rawcol = Math.floor(Math.random() *10);
+		var rawcol = signal
+		var col = gradient(rawcol, 10,0);
+
+		return {
+				color: col,
+				opacity: 0.5,
+				weight: 0,
+			}
+	}
+
+	function show_search_data(zonemesh, data) {
+		if(!jQuery.isEmptyObject(signalLayerG)) {
+			map.removeLayer(signalLayerG);
+			signalLayerG = {};
+		}
+
+		signalLayerG = L.layerGroup();
+
+		for(var i=0; i<zonemesh.length; i++){
+			for (var j=0; j<data.length; j++) {
+				var sigpt = data[j];
+
+				if (is_pt_inside([sigpt["lon"], sigpt["lat"]], zonemesh[i])){
+
+					var element = {
+						"type": "Feature",
+						"geometry": {
+							"type": "Polygon",
+							"coordinates": [zonemesh[i]],
+						},
+						"properties": {
+							"signal": data[j]["signal_ant1"]
+						}
+					};
+
+					signalLayerG.addLayer(
+						L.geoJson(element, {
+								style: function(feature) {
+									return get_element_style(feature.properties.signal);
+								}})
+					);
+				}
+			}	
+		}
+		signalLayerG.addTo(map);
+	}
+
+	function update_flightpath(search_data) {
+		
+		if(!jQuery.isEmptyObject(searchLayerG)) {
+			map.removeLayer(searchLayerG);	
+		}
+		
+		searchLayerG = L.layerGroup();
+
+
+		targetlocation = {"type": "Point", "coordinates": search_data.waypoints[search_data.target]};
+		searchLayerG.addLayer(L.geoJson(targetlocation, {
+			pointToLayer: function (feature, latlng) {
+				return L.marker(latlng, {icon: targetIcon});
+			}
+		}));
+
+		targetpath = {"type": "LineString", "coordinates": [ vehicle_location.coordinates , search_data.waypoints[search_data.target]]};
+		searchLayerG.addLayer(
+			L.geoJson(
+				targetpath, {
+					style: function(feature) {
+								var style = {};
+								style.color = 'green';
+								style.dashArray = '';
+								style.weight = '3';
+							return style;
+							}
+					}
+				)
+			);
+
+		for (i = search_data.target +1; i< search_data.waypoints.length; i++) {		
+				wpgeoJson = {'type': 'Point', 'coordinates': search_data.waypoints[i] };
+	
+				searchLayerG.addLayer(
+					L.geoJson(
+						wpgeoJson, {
+							pointToLayer: function (feature, latlng) {
+									return L.marker(latlng, {icon: wpIcon});
+								}
+							}
+						)
+					);
+			path = {"type": "LineString", "coordinates": search_data.waypoints.slice(search_data.target, search_data.waypoints.length)};
+
+			searchLayerG.addLayer(
+				L.geoJson(
+					path, {
+						style: function(feature) {
+								var style = {};
+								style.color = 'black';
+								style.dashArray = '';
+								style.weight = '3';
+							return style;
+							}
+					}
+				)
+			);
+		}	
+
+		searchLayerG.addTo(map);
+
+	}
+
+//User Interation functions
+
+	function highlightZone(e) {
+		var layer = e.target;
+		info.update(layer.feature.properties);
+		layer.setStyle({
+			weight: 5,
+			dashArray: '',
+			fillOpacity: 0.8
+		});
+	}
+	function resetHighlight(e) {
+		zonesLayer.resetStyle(e.target);
+		info.update();
+	}
+
+	function zoomToFeature(e) {
+		zonebounds = e.target.getBounds();
+		map.fitBounds(zonebounds.extend(droneLayer.getBounds()));
+	}
+
+	function blockEventListeners(e) {
+		zonesLayer.eachLayer(function(layer) {
+			layer.off({
+				mouseover: highlightZone,
+				mouseout: resetHighlight,
+				click: clickZone
+			});
+		})
+			e.target.on('click', clickZone);
+	}
+
+	function resetEventListeners(e) {
+		zonesLayer.eachLayer(function(layer) {
+			layer.on({
+				mouseover: highlightZone,
+				mouseout: resetHighlight,
+				click: clickZone
+			});
+		});
+	}
+
+	function clickZone(e) {
+		if (e.target.feature.properties.selected){
+
+			e.target.feature.properties.selected = 0;
+			resetEventListeners(e);
+			zone_unselected();
+		
+		}else{
+		
+			e.target.feature.properties.selected = 1;
+
+			blockEventListeners(e);
+
+			zoomToFeature(e);
+			info.update(e.target.feature.properties);
+			zone_selected(e);
+		}
+	}
+
+	function onEachFeature(feature, layer) {
+		layer.on({
+			mouseover: highlightZone,
+			mouseout: resetHighlight,
+			click: clickZone
+		});
+	}
+
+	function map_searchconfig(e) {
+
+		flightzone_search = e.target;
+		
+		zonesLayer.eachLayer(function(layer) {
+
+			if (layer != flightzone_search) {
+				map.removeLayer(layer);
+			}else{
+				layer.off({
+					mouseover: highlightZone,
+					mouseout: resetHighlight,
+					click: clickZone
+				});
+
+				layer.setStyle({
+					weight: 5,
+					dashArray: '',
+					fillOpacity: 0.2
+				});
+			}
+		})
+	}
+</script>
